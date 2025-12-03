@@ -474,3 +474,164 @@ kubectl get hpa
 kubectl delete -f k8s/local/
 kubectl apply -f k8s/local/
 ```
+
+---
+
+## Namespace Management
+
+Kubernetes uses namespaces to isolate resources.
+
+### View All Namespaces
+
+```bash
+kubectl get namespaces
+```
+
+### Default Namespaces
+
+| Namespace           | Description                      | ลบได้ไหม |
+| ------------------- | -------------------------------- | -------- |
+| **default**         | namespace หลักสำหรับ app ของคุณ  | ❌       |
+| **kube-system**     | system components (DNS, metrics) | ❌       |
+| **kube-public**     | public cluster info              | ❌       |
+| **kube-node-lease** | node heartbeat management        | ❌       |
+
+### View Resources in All Namespaces
+
+```bash
+# View all services
+kubectl get svc --all-namespaces
+
+# View all pods
+kubectl get pods --all-namespaces
+
+# View all resources
+kubectl get all --all-namespaces
+```
+
+### Delete a Namespace
+
+```bash
+# Normal delete
+kubectl delete namespace <namespace-name>
+
+# Force delete (if stuck in Terminating)
+kubectl delete namespace <namespace-name> --force --grace-period=0
+```
+
+### Fix Namespace Stuck in "Terminating"
+
+If a namespace is stuck in `Terminating` status:
+
+```bash
+# Check what's blocking it
+kubectl get all -n <namespace-name>
+
+# Remove finalizers to force delete
+kubectl get namespace <namespace-name> -o json | \
+  jq '.spec.finalizers = []' | \
+  kubectl replace --raw "/api/v1/namespaces/<namespace-name>/finalize" -f -
+```
+
+### Create a New Namespace
+
+```bash
+# Create namespace
+kubectl create namespace my-app
+
+# Deploy to specific namespace
+kubectl apply -f k8s/local/ -n my-app
+
+# Set default namespace
+kubectl config set-context --current --namespace=my-app
+```
+
+---
+
+## Context Management
+
+Kubernetes uses contexts to switch between clusters and namespaces.
+
+### View Current Context
+
+```bash
+# Show all contexts
+kubectl config get-contexts
+
+# Show current context only
+kubectl config current-context
+```
+
+### Example Output
+
+```
+CURRENT   NAME             CLUSTER          AUTHINFO         NAMESPACE
+*         docker-desktop   docker-desktop   docker-desktop
+          gke_my-project   gke_my-project   gke_my-project   production
+```
+
+- `*` = context ที่กำลังใช้งานอยู่
+- `NAMESPACE` = namespace เริ่มต้น (ถ้าว่าง = default)
+
+### Switch Context (Cluster)
+
+```bash
+# เปลี่ยนไปใช้ cluster อื่น
+kubectl config use-context docker-desktop
+
+# เปลี่ยนไปใช้ GKE cluster
+kubectl config use-context gke_my-project_asia-southeast1_my-cluster
+```
+
+### Change Default Namespace
+
+```bash
+# เปลี่ยน namespace เริ่มต้นสำหรับ context ปัจจุบัน
+kubectl config set-context --current --namespace=my-app
+
+# เปลี่ยนกลับไปใช้ default
+kubectl config set-context --current --namespace=default
+```
+
+### View Current Config
+
+```bash
+# ดูค่า config ทั้งหมด
+kubectl config view
+
+# ดูเฉพาะ current context
+kubectl config view --minify
+```
+
+### Common Context Workflows
+
+**Switch between Local and Production:**
+
+```bash
+# ทำงานกับ local (Docker Desktop)
+kubectl config use-context docker-desktop
+
+# Deploy to production (GKE/EKS)
+kubectl config use-context gke_my-project_asia-southeast1_production
+```
+
+**Work with Multiple Namespaces:**
+
+```bash
+# สร้างและใช้ namespace สำหรับ development
+kubectl create namespace dev
+kubectl config set-context --current --namespace=dev
+kubectl apply -f k8s/local/
+
+# สลับไปใช้ staging
+kubectl config set-context --current --namespace=staging
+```
+
+### Tips
+
+| คำสั่ง                                                  | คำอธิบาย            |
+| ------------------------------------------------------- | ------------------- |
+| `kubectl config get-contexts`                           | ดู contexts ทั้งหมด |
+| `kubectl config current-context`                        | ดู context ปัจจุบัน |
+| `kubectl config use-context <name>`                     | เปลี่ยน cluster     |
+| `kubectl config set-context --current --namespace=<ns>` | เปลี่ยน namespace   |
