@@ -1,24 +1,24 @@
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v2 # เวอร์ชันของ Autoscaling API
+kind: HorizontalPodAutoscaler # ประเภท resource (HPA = ปรับจำนวน pods อัตโนมัติ)
 metadata:
-  name: pipeline-app-hpa
+  name: pipeline-app-hpa # ชื่อของ HPA
 spec:
-  scaleTargetRef:
+  scaleTargetRef: # อ้างอิงถึง Deployment ที่จะ scale
     apiVersion: apps/v1
     kind: Deployment
     name: pipeline-app
-  minReplicas: 1
-  maxReplicas: 5
-  metrics:
+  minReplicas: 1 # จำนวน pods ขั้นต่ำ
+  maxReplicas: 5 # จำนวน pods สูงสุด
+  metrics: # เงื่อนไขในการ scale
     - type: Resource
       resource:
-        name: cpu
+        name: cpu # ดู CPU usage
         target:
           type: Utilization
-          averageUtilization: 70
+          averageUtilization: 70 # ถ้า CPU เกิน 70% จะ scale up
     - type: Resource
       resource:
-        name: memory
+        name: memory # ดู Memory usage
         target:
           type: Utilization
-          averageUtilization: 80
+          averageUtilization: 80 # ถ้า Memory เกิน 80% จะ scale up

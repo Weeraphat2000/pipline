@@ -1,44 +1,44 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1 # เวอร์ชันของ Kubernetes API ที่ใช้
+kind: Deployment # ประเภทของ resource (Deployment = การจัดการ pods)
 metadata:
-  name: pipeline-app
+  name: pipeline-app # ชื่อของ Deployment
   labels:
-    app: pipeline-app
+    app: pipeline-app # label สำหรับระบุ app
 spec:
-  replicas: 2
+  replicas: 1 # จำนวน pods ที่ต้องการรัน (HPA จะปรับค่านี้อัตโนมัติ)
   selector:
     matchLabels:
-      app: pipeline-app
+      app: pipeline-app # เลือก pods ที่มี label ตรงกัน
   template:
     metadata:
       labels:
-        app: pipeline-app
+        app: pipeline-app # label ของ pod template
     spec:
       containers:
-        - name: pipeline-app
-          image: pipeline-app:local
-          imagePullPolicy: Never
+        - name: pipeline-app # ชื่อ container
+          image: pipeline-app:local # Docker image ที่ใช้
+          imagePullPolicy: Never # ไม่ดึง image จาก registry (ใช้ local image)
           ports:
-            - containerPort: 3000
+            - containerPort: 3000 # port ที่ app รันอยู่ใน container
           resources:
-            requests:
-              memory: '64Mi'
-              cpu: '50m'
-            limits:
-              memory: '128Mi'
-              cpu: '200m'
-          livenessProbe:
+            requests: # ทรัพยากรขั้นต่ำที่ต้องการ (ใช้คำนวณ HPA)
+              memory: '32Mi' # หน่วยความจำขั้นต่ำ 32 MB
+              cpu: '10m' # CPU ขั้นต่ำ 10 millicores (0.01 core)
+            limits: # ทรัพยากรสูงสุดที่อนุญาต
+              memory: '128Mi' # หน่วยความจำสูงสุด 128 MB
+              cpu: '100m' # CPU สูงสุด 100 millicores (0.1 core)
+          livenessProbe: # ตรวจสอบว่า app ยังทำงานอยู่ไหม
             httpGet:
-              path: /
+              path: /health # เรียก endpoint /health
               port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
+            initialDelaySeconds: 30 # รอ 30 วินาทีก่อนเริ่มตรวจ
+            periodSeconds: 10 # ตรวจทุกๆ 10 วินาที
+          readinessProbe: # ตรวจสอบว่า app พร้อมรับ traffic ไหม
             httpGet:
-              path: /
+              path: /health
               port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          env:
+            initialDelaySeconds: 5 # รอ 5 วินาทีก่อนเริ่มตรวจ
+            periodSeconds: 5 # ตรวจทุกๆ 5 วินาที
+          env: # ตัวแปร environment
             - name: NODE_ENV
               value: 'development'

@@ -1,19 +1,40 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { AppService } from './app.service';
+import * as os from 'os';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  private readonly podName: string;
+
+  constructor(private readonly appService: AppService) {
+    this.podName = process.env.HOSTNAME || os.hostname();
+  }
 
   @Get()
-  getHello(): string {
-    console.log('hellowwwwww');
-    return this.appService.getHello();
+  getHello(): { message: string; pod: string } {
+    console.log(`Request handled by pod: ${this.podName}`);
+    return {
+      message: this.appService.getHello(),
+      pod: this.podName,
+    };
+  }
+
+  @Get('health')
+  getHealth(): { status: string; pod: string } {
+    return {
+      status: 'ok',
+      pod: this.podName,
+    };
   }
 
   @Get(':name')
-  getGreeting(@Param('name') name: string): string {
-    console.log(`Greeting requested for: ${name}`);
-    return `Hello, ${name}!`;
+  getGreeting(@Param('name') name: string): { message: string; pod: string } {
+    console.log(
+      `Greeting requested for: ${name} - handled by pod: ${this.podName}`,
+    );
+    return {
+      message: `Hello, ${name}!`,
+      pod: this.podName,
+    };
   }
 }

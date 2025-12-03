@@ -1,15 +1,14 @@
-apiVersion: v1
-kind: Service
+apiVersion: v1 # เวอร์ชันของ Kubernetes API
+kind: Service # ประเภท resource (Service = เปิดให้เข้าถึง pods)
 metadata:
-  name: pipeline-app-service
+  name: pipeline-app-service # ชื่อของ Service
   labels:
     app: pipeline-app
 spec:
-  type: NodePort
+  type: LoadBalancer # ประเภท Service (LoadBalancer = สร้าง external IP)
   ports:
-    - port: 80
-      targetPort: 3000
-      nodePort: 30000
+    - port: 80 # port ที่เปิดให้ภายนอกเข้าถึง
+      targetPort: 3000 # port ของ container ที่จะส่ง traffic ไป
       protocol: TCP
   selector:
-    app: pipeline-app
+    app: pipeline-app # เลือก pods ที่มี label ตรงกัน
