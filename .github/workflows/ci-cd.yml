@@ -38,6 +38,8 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      SHORT_SHA: ${{ steps.vars.outputs.SHORT_SHA }}
 
     steps:
       - name: Checkout
@@ -91,7 +93,12 @@ jobs:
 
       - name: Update Helm values.yaml
         run: |
-          SHORT_SHA=${{ needs.build-and-push.outputs.SHORT_SHA }}
+          SHORT_SHA="${{ needs.build-and-push.outputs.SHORT_SHA }}"
+          git clone https://github.com/Weeraphat2000/helm-pipeline.git
+          cd helm-pipeline
+          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
+          cd ..
+          mv helm-pipeline/my-app/values.yaml ./my-app/values.yaml
           sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
 
       - name: Commit and push changes
