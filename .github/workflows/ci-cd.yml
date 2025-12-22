@@ -82,15 +82,22 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
 
-      - name: Update Infra Repo
+  update-helm-values:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Helm values.yaml
         run: |
-          git clone https://github.com/Weeraphat2000/helm-pipeline.git
-          cd helm-pipeline
-          git checkout main
+          SHORT_SHA=${{ needs.build-and-push.outputs.SHORT_SHA }}
+          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
 
-          sed -i "s/tag:.*/tag: \"${{ steps.vars.outputs.SHORT_SHA }}\"/" ./my-app/values.yaml
-
-          git config user.email ${{ secrets.EMAIL_GITHUB }}
-          git config user.name ${{ secrets.USERNAME_GITHUB }}
-          git commit -am "deploy my-app ${{ steps.vars.outputs.SHORT_SHA }}"
-          git push
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'Update Helm values.yaml with new image tag'
+          branch: main
+          file_pattern: ./helm/values.yaml
+          commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
