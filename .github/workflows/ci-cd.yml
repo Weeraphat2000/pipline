@@ -81,3 +81,16 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
+
+      - name: Update Infra Repo
+        run: |
+          git clone https://github.com/Weeraphat2000/helm-pipeline.git
+          cd helm-pipeline
+          git checkout main
+
+          sed -i "s/tag:.*/tag: \"${{ steps.vars.outputs.SHORT_SHA }}\"/" ./my-app/values.yaml
+
+          git config user.email ${{ secrets.EMAIL_GITHUB }}
+          git config user.name ${{ secrets.USERNAME_GITHUB }}
+          git commit -am "deploy my-app ${{ steps.vars.outputs.SHORT_SHA }}"
+          git push
