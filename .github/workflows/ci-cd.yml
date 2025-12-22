@@ -98,6 +98,7 @@ jobs:
           cd helm-pipeline
           sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
           cd ..
+          mkdir -p ./my-app
           mv helm-pipeline/my-app/values.yaml ./my-app/values.yaml
           sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
 
