@@ -88,24 +88,23 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout helm-pipeline repo
         uses: actions/checkout@v4
+        with:
+          repository: Weeraphat2000/helm-pipeline
+          token: ${{ secrets.GH_PAT }}
+          path: helm-pipeline
 
-      - name: Update Helm values.yaml
+      - name: Update values.yaml
         run: |
           SHORT_SHA="${{ needs.build-and-push.outputs.SHORT_SHA }}"
-          git clone https://github.com/Weeraphat2000/helm-pipeline.git
-          cd helm-pipeline
-          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
-          cd ..
-          mkdir -p ./my-app
-          mv helm-pipeline/my-app/values.yaml ./my-app/values.yaml
-          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" ./my-app/values.yaml
+          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" helm-pipeline/my-app/values.yaml
 
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: 'Update Helm values.yaml with new image tag'
-          branch: main
-          file_pattern: ./helm/values.yaml
-          commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+      - name: Commit and push
+        run: |
+          cd helm-pipeline
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add my-app/values.yaml
+          git commit -m "Update imageTag to ${SHORT_SHA}"
+          git push
