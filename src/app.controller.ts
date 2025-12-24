@@ -33,7 +33,7 @@ export class AppController {
       `Greeting requested for: ${name} - handled by pod: ${this.podName}`,
     );
     return {
-      message: `Hello, ${name}! Welcome to our NestJS application.`,
+      message: `Hello, ${name}! Welcome back!`,
       pod: this.podName,
     };
   }
