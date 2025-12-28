@@ -13,7 +13,7 @@ export class AppController {
   @Get()
   getHello(): { message: string; pod: string } {
     console.log(`Request handled by pod: ${this.podName}`);
-    console.log('update 1.0');
+    console.log('update 1.1');
     return {
       message: this.appService.getHello(),
       pod: this.podName,
