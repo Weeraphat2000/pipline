@@ -63,6 +63,13 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           path: helm-pipeline
 
+      - name: Switch to production branch
+        run: |
+          cd helm-pipeline
+          git fetch origin production
+          git checkout production
+          git pull origin production
+
       - name: Update values.yaml
         run: |
           SHORT_SHA="${{ needs.build-and-push.outputs.SHORT_SHA }}"
@@ -73,9 +80,6 @@ jobs:
           cd helm-pipeline
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin production
-          git checkout production
-          git pull origin production
           git add my-app/values.yaml
           if git diff --cached --quiet; then
             echo "No changes to commit or push";
