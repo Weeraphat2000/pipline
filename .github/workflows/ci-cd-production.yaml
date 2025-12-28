@@ -1,0 +1,85 @@
+name: CI/CD Production Pipeline
+on:
+  pull_request:
+    branches:
+      - production
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      SHORT_SHA: ${{ steps.vars.outputs.SHORT_SHA }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract short commit SHA
+        id: vars
+        run: echo "SHORT_SHA=$(echo ${{ github.sha }} | head -c 7)" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: false
+          load: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
+
+      - name: Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
+
+  update-helm-values:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout helm-pipeline repo
+        uses: actions/checkout@v4
+        with:
+          repository: Weeraphat2000/helm-pipeline
+          token: ${{ secrets.GH_PAT }}
+          path: helm-pipeline
+
+      - name: Update values.yaml
+        run: |
+          SHORT_SHA="${{ needs.build-and-push.outputs.SHORT_SHA }}"
+          sed -i "s|imageTag: .*|imageTag: ${SHORT_SHA}|" helm-pipeline/my-app/values.yaml
+
+      - name: Commit and push
+        run: |
+          cd helm-pipeline
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin production
+          git checkout production
+          git pull origin production
+          git add my-app/values.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to commit or push";
+            exit 0;
+          fi
+          git commit -m "Update imageTag to ${SHORT_SHA}"
+          git push
