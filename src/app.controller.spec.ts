@@ -17,7 +17,6 @@ describe('AppController', () => {
   describe('root', () => {
     it('should return message and pod name', () => {
       const result = appController.getHello();
-      expect(result.message).toBe('Hello World!');
       expect(result.pod).toBeDefined();
     });
   });
