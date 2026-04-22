@@ -61,19 +61,7 @@ jobs:
         id: vars
         run: echo "SHORT_SHA=$(echo ${{ github.sha }} | head -c 7)" >> $GITHUB_OUTPUT
 
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/arm64
-          push: false
-          load: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
-
-      - name: Push Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -83,6 +71,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}:${{ steps.vars.outputs.SHORT_SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   update-helm-values:
     needs: build-and-push
