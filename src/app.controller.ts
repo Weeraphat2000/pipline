@@ -15,7 +15,12 @@ export class AppController {
     console.log(`Request handled by pod: ${this.podName}`);
     console.log('update 1.1');
     return {
-      message: this.appService.getHello() + 'latest update' + 'latest update',
+      message:
+        this.appService.getHello() +
+        'latest update' +
+        'latest update' +
+        'latest update' +
+        'latest update',
       pod: this.podName,
     };
   }
